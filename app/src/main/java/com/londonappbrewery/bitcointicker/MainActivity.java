@@ -12,16 +12,21 @@ import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.Toast;
 
 
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.JsonHttpResponseHandler;
+
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import cz.msebera.android.httpclient.Header;
 
 
 public class MainActivity extends AppCompatActivity {
 
     // Constants:
     // TODO: Create the base URL
-    private final String BASE_URL = "https://apiv2.bitcoin ...";
+    private final String BASE_URL = "https://apiv2.bitcoinaverage.com/indices/global/ticker/BTC";
 
     // Member Variables:
     TextView mPriceTextView;
@@ -45,11 +50,47 @@ public class MainActivity extends AppCompatActivity {
         spinner.setAdapter(adapter);
 
         // TODO: Set an OnItemSelected listener on the spinner
+        spinner.setOnItemSelectedListener(new OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                Log.d("Bitcoin", "" + parent.getItemAtPosition(position));
+                letsDoSomeNetworking("" + parent.getItemAtPosition(position));
+            }
 
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                Log.d("Bitcoin", "Nothing selected");
+            }
+        });
     }
 
     // TODO: complete the letsDoSomeNetworking() method
     private void letsDoSomeNetworking(String url) {
+        AsyncHttpClient client = new AsyncHttpClient();
+        client.get(BASE_URL + url, new JsonHttpResponseHandler(){
+
+
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                Toast.makeText(MainActivity.this, "Request Success", Toast.LENGTH_SHORT).show();
+                Log.d("Bitcoin", "Json " + response.toString());
+                try {
+                    String bitcoinPrice = response.getString("ask");
+                    mPriceTextView.setText(bitcoinPrice);
+                } catch (JSONException e) {
+                    Toast.makeText(MainActivity.this, "Error Updating Price", Toast.LENGTH_SHORT);
+                    Log.d("Bitcoin", e.toString());
+                }
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
+                Log.d("Bitcoin", "Request fail! Status code: " + statusCode);
+                Log.d("Bitcoin", "Fail response: " + responseString);
+                Log.d("Bitcoin", "Error: " + throwable.toString());
+                Toast.makeText(MainActivity.this, "Request Failed", Toast.LENGTH_SHORT).show();
+            }
+        });
 
 //        AsyncHttpClient client = new AsyncHttpClient();
 //        client.get(WEATHER_URL, params, new JsonHttpResponseHandler() {
